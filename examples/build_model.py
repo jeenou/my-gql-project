@@ -130,13 +130,24 @@ print("CreateProcess result:", add_process_result)
 # Example mutation to add a node group
 add_node_group_mutation = gql("""
 mutation CreateNodeGroup {
-    createNodeGroup(name: "ExampleProcessGroup") {
+    createNodeGroup(name: "ExampleNodeGroup") {
         message
     }
 }
 """)
 add_node_group_result = client.execute(add_node_group_mutation)
 print("CreateNodeGroup result:", add_node_group_result)
+
+# Example mutation to add a scenario
+add_scenario_mutation = gql("""
+mutation CreateScenario {
+    createScenario(name: "ExampleScenario", weight: 1.0) {
+        message
+    }
+}
+""")
+add_scenario_result = client.execute(add_scenario_mutation)
+print("CreateScenario result:", add_scenario_result)
 
 # Example mutation to add a process group
 add_process_group_mutation = gql("""
