@@ -176,9 +176,19 @@ mutation CreateMarket {
         minBid: 0.0,
         maxBid: 100.0,
         fee: 0.0,
-        price: [],
-        upPrice: [],
-        downPrice: [],
+        price: [
+        {
+        scenario: "ExampleScenario",
+        constant: 50.0
+        }],
+        upPrice: [{
+        scenario: "ExampleScenario",
+        constant: 51.0
+        }],
+        downPrice: [{
+        scenario: "ExampleScenario",
+        constant: 49.0
+        }],
         reserveActivationPrice: []
     }) {
         errors {
@@ -191,3 +201,21 @@ mutation CreateMarket {
 
 add_market_result = client.execute(add_market_mutation)
 print("CreateMarket result:", add_market_result)
+
+# Example mutation to add a risk to the model
+add_risk_mutation = gql("""
+mutation CreateRisk {
+    createRisk(risk: {
+        parameter: "HighDemandSpike",
+        value: 0.15
+    }) {
+        errors {
+            field
+            message
+        }
+    }
+}
+""")
+
+add_risk_result = client.execute(add_risk_mutation)
+print("CreateRisk result:", add_risk_result)
