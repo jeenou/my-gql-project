@@ -93,6 +93,27 @@ mutation CreateNode {
 
 add_node_result = client.execute(add_node_mutation)
 print("CreateNode result:", add_node_result)
+# Example mutation to add ExampleNode2 to the model
+add_node2_mutation = gql("""
+mutation CreateNode {
+    createNode(node: {
+        name: "ExampleNode2",
+        isCommodity: false,
+        isMarket: false,
+        isRes: false,
+        cost: [],
+        inflow: []
+    }) {
+        errors {
+            field
+            message
+        }
+    }
+}
+""")
+
+add_node2_result = client.execute(add_node2_mutation)
+print("CreateNode2 result:", add_node2_result)
 
 # Example mutation to add a process to the model
 add_process_mutation = gql("""
@@ -219,3 +240,23 @@ mutation CreateRisk {
 
 add_risk_result = client.execute(add_risk_mutation)
 print("CreateRisk result:", add_risk_result)
+# Example mutation to add a node diffusion to the model
+add_nodediffusion_mutation = gql("""
+mutation CreateNodeDiffusion {
+    createNodeDiffusion(newDiffusion: {
+        fromNode: "ExampleNode",
+        toNode: "ExampleNode2",
+        coefficient: [
+            { scenario: "ExampleScenario", constant: 0.5 }
+        ]
+    }) {
+        errors {
+            field
+            message
+        }
+    }
+}
+""")
+
+add_nodediffusion_result = client.execute(add_nodediffusion_mutation)
+print("CreateNodeDiffusion result:", add_nodediffusion_result)
