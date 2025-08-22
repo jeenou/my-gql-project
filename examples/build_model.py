@@ -294,3 +294,26 @@ mutation CreateNodeHistory {
 
 add_node_history_result = client.execute(add_node_history_mutation)
 print("CreateNodeHistory result:", add_node_history_result)
+# Example mutation to create a generic constraint
+add_genconstraint_mutation = gql("""
+mutation CreateGenConstraint {
+    createGenConstraint(constraint: {
+        name: "ExampleGenConstraint",
+        gcType: LESS_THAN,
+        isSetpoint: false,
+        penalty: 100.0,
+        constant: [
+            { scenario: "ExampleScenario", constant: 50.0 }
+        ]
+    }) {
+        errors {
+            field
+            message
+        }
+    }
+}
+""")
+
+add_genconstraint_result = client.execute(add_genconstraint_mutation)
+print("CreateGenConstraint result:", add_genconstraint_result)
+
