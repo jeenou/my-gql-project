@@ -260,3 +260,37 @@ mutation CreateNodeDiffusion {
 
 add_nodediffusion_result = client.execute(add_nodediffusion_mutation)
 print("CreateNodeDiffusion result:", add_nodediffusion_result)
+# Example mutation to add a node delay to the model
+add_nodedelay_mutation = gql("""
+mutation CreateNodeDelay {
+    createNodeDelay(delay: {
+        fromNode: "ExampleNode",
+        toNode: "ExampleNode2",
+        delay: 2.5,
+        minDelayFlow: 0.0,
+        maxDelayFlow: 10.0
+    }) {
+        errors {
+            field
+            message
+        }
+    }
+}
+""")
+
+add_nodedelay_result = client.execute(add_nodedelay_mutation)
+print("CreateNodeDelay result:", add_nodedelay_result)
+# Example mutation to create node history
+add_node_history_mutation = gql("""
+mutation CreateNodeHistory {
+    createNodeHistory(nodeName: "ExampleNode") {
+        errors {
+            field
+            message
+        }
+    }
+}
+""")
+
+add_node_history_result = client.execute(add_node_history_mutation)
+print("CreateNodeHistory result:", add_node_history_result)
