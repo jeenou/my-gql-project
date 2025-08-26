@@ -61,12 +61,13 @@ input ForecastValueInput {
 }
 
 input InputDataSetupInput {
-  "Flag indicating whether market bids are used in the model" useMarketBids: Boolean
+  "Flag indicating whether market bids are used in the model." useMarketBids: Boolean
   "Flag indicating whether reserves are used in the model. If set to false, no reserve functionalities are used." useReserves: Boolean
   "Indicates whether reserves can be realised. If set to false, no realisation occurs." useReserveRealisation: Boolean
   "Indicates if dummy variables should be used in the node balance equations." useNodeDummyVariables: Boolean
   "Indicates if dummy variables should be used in the ramp balance equations." useRampDummyVariables: Boolean
-  "Indicates the length of a common start, where the parameters and variable values are equal across all scenarios. Default is 0." commonTimesteps: Int
+  "Indicates the length of a common start, where the parameters and variable values are equal across 
+all scenarios. Default is 0." commonTimesteps: Int
   "Name of the common start scenario, if it is used." commonScenarioName: String
   nodeDummyVariableCost: Float
   rampDummyVariableCost: Float
@@ -84,6 +85,12 @@ input NewGenConstraint {
   isSetpoint: Boolean!
   penalty: Float!
   constant: [ValueInput!]!
+}
+
+input NewInflowBlock {
+  name: String!
+  node: String!
+  data: [ValueInput!]!
 }
 
 input NewMarket {
@@ -129,23 +136,28 @@ input NewNodeDiffusion {
 }
 
 input NewProcess {
+  "Name of the process." name: String!
+  "Indicates the type of the process. Options: Unit, Transfer, Market" conversion: Conversion!       
+  "Indicates if the process has to match the capacity factor time series." isCfFix: Boolean!
+  "Indicates if the process is an online/offline unit." isOnline: Boolean!
+  "Indicates if the process participates in reserve markets" isRes: Boolean!
+  "Process efficiency (total output / total input)" eff: Float!
+  "Minimum load of the process as a fraction of total capacity. Only for online processes" loadMin: Float!
+  "Maximum load of the process as a fraction of total capacity. Only for online processes" loadMax: Float!
+  "Cost of starting the unit, only for online processes." startCost: Float!
+  "Minimum time the process has to be online after start up." minOnline: Float!
+  "Maximum time the process can be online." maxOnline: Float!
+  "Minimum time the process has to be offline during shut down." minOffline: Float!
+  "Maximum time the process can be offline." maxOffline: Float!
+  "Initial state of the online unit (0 = offline, 1 = online)." initialState: Boolean!
+  "If true, forces the online variable of the process to be equal in all scenarios." isScenarioIndependent: Boolean!
+  "Capacity factor time series for processes with cf functionality." cf: [ValueInput!]!
+  "Value time series of the efficiency of processes" effTs: [ValueInput!]!
+}
+
+input NewReserveType {
   name: String!
-  conversion: Conversion!
-  isCfFix: Boolean!
-  isOnline: Boolean!
-  isRes: Boolean!
-  eff: Float!
-  loadMin: Float!
-  loadMax: Float!
-  startCost: Float!
-  minOnline: Float!
-  maxOnline: Float!
-  minOffline: Float!
-  maxOffline: Float!
-  initialState: Boolean!
-  isScenarioIndependent: Boolean!
-  cf: [ValueInput!]!
-  effTs: [ValueInput!]!
+  rampRate: Float!
 }
 
 input NewRisk {
@@ -199,9 +211,15 @@ input StateUpdate {
   residualValue: Float
 }
 
+input TimeLineStartInput {
+  clockChoice: Clock
+  customStartTime: String
+}
+
 input TimeLineUpdate {
   duration: DurationInput
   step: DurationInput
+  start: TimeLineStartInput
 }
 
 input ValueInput {
@@ -411,7 +429,8 @@ type Mutation {
   "Delete a process and all items that depend on that process."
   deleteProcess(name: String!): MaybeError!
   "Create new topology and add it to process."
-  createTopology(topology: NewTopology!, sourceNodeName: String, processName: String!, sinkNodeName: String): ValidationErrors!
+  createTopology(topology: NewTopology!, sourceNodeName: String, processName: String!, sinkNodeName: 
+String): ValidationErrors!
   deleteTopology(sourceNodeName: String, processName: String!, sinkNodeName: String): MaybeError!    
   "Create new node."
   createNode(node: NewNode!): ValidationErrors!
@@ -441,12 +460,17 @@ type Mutation {
   "Create new risk."
   createRisk(risk: NewRisk!): ValidationErrors!
   deleteRisk(parameter: String!): MaybeError!
+  "Create new reserve type."
+  createReserveType(reserveType: NewReserveType!): ValidationErrors!
+  "Create new inflow block."
+  createInflowBlock(inflowBlock: NewInflowBlock!): ValidationErrors!
   "Create new generic constraint."
   createGenConstraint(constraint: NewGenConstraint!): ValidationErrors!
   deleteGenConstraint(name: String!): MaybeError!
   "Create new flow constraint factor and add it to generic constraint."
   createFlowConFactor(factor: [ValueInput!]!, constraintName: String!, processName: String!, sourceOrSinkNodeName: String!): ValidationErrors!
-  deleteFlowConFactor(constraintName: String!, processName: String!, sourceOrSinkNodeName: String!): MaybeError!
+  deleteFlowConFactor(constraintName: String!, processName: String!, sourceOrSinkNodeName: String!): 
+MaybeError!
   "Create new state constraint factor and add it to generic constraint."
   createStateConFactor(factor: [ValueInput!]!, constraintName: String!, nodeName: String!): ValidationErrors!
   deleteStateConFactor(constraintName: String!, nodeName: String!): MaybeError!

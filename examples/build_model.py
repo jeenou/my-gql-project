@@ -317,3 +317,42 @@ mutation CreateGenConstraint {
 add_genconstraint_result = client.execute(add_genconstraint_mutation)
 print("CreateGenConstraint result:", add_genconstraint_result)
 
+# Example mutation to create a reserve type
+add_reservetype_mutation = gql("""
+mutation CreateReserveType {
+    createReserveType(reserveType: {
+        name: "ExampleReserveType",
+        rampRate: 1.5
+    }) {
+        errors {
+            field
+            message
+        }
+    }
+}
+""")
+
+add_reservetype_result = client.execute(add_reservetype_mutation)
+print("CreateReserveType result:", add_reservetype_result)
+
+# Example mutation to create an inflow block
+add_inflowblock_mutation = gql("""
+mutation CreateInflowBlock {
+    createInflowBlock(inflowBlock: {
+        name: "ExampleInflowBlock",
+        node: "ExampleNode",
+        data: [
+            { scenario: "ExampleScenario", constant: 42.0 }
+        ]
+    }) {
+        errors {
+            field
+            message
+        }
+    }
+}
+""")
+
+add_inflowblock_result = client.execute(add_inflowblock_mutation)
+print("CreateInflowBlock result:", add_inflowblock_result)
+
