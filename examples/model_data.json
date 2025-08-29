@@ -1,0 +1,178 @@
+{
+  "nodes": [
+    {
+      "name": "ng",
+      "isCommodity": true,
+      "isMarket": false,
+      "isRes": false,
+      "cost": [],
+      "inflow": []
+    },
+    {
+      "name": "elc",
+      "isCommodity": false,
+      "isMarket": false,
+      "isRes": true,
+      "cost": [],
+      "inflow": []
+    },
+    {
+      "name": "dh",
+      "isCommodity": false,
+      "isMarket": false,
+      "isRes": false,
+      "cost": [],
+      "inflow": []
+    },
+    {
+      "name": "h2",
+      "isCommodity": false,
+      "isMarket": false,
+      "isRes": false,
+      "cost": [],
+      "inflow": []
+    },
+    {
+      "name": "dh2",
+      "isCommodity": false,
+      "isMarket": false,
+      "isRes": false,
+      "cost": [],
+      "inflow": []
+    }
+  ],
+  "processes": [
+        {
+        "name": "ngchp",
+        "conversion": "UNIT",
+        "isCfFix": false,
+        "isOnline": true,
+        "isRes": true,
+        "eff": 0.9,
+        "loadMin": 0.3,
+        "loadMax": 1.0,
+        "startCost": 0.0,
+        "minOnline": 4.0,
+        "minOffline": 3.0,
+        "maxOnline": 0.0,
+        "maxOffline": 0.0,
+        "initialState": true,
+        "isScenarioIndependent": true,
+        "delay": 0.0,
+        "cf": [],
+        "effTs": []
+        },
+        {
+        "name": "hp1",
+        "conversion": "UNIT",
+        "isCfFix": false,
+        "isOnline": false,
+        "isRes": true,
+        "eff": 3.0,
+        "loadMin": 0.0,
+        "loadMax": 1.0,
+        "startCost": 0.0,
+        "minOnline": 0.0,
+        "minOffline": 0.0,
+        "maxOnline": 0.0,
+        "maxOffline": 0.0,
+        "initialState": false,
+        "isScenarioIndependent": false,
+        "delay": 0.0,
+        "cf": [],
+        "effTs": []
+        },
+        {
+        "name": "p2x1",
+        "conversion": "UNIT",
+        "isCfFix": false,
+        "isOnline": false,
+        "isRes": true,
+        "eff": 0.7,
+        "loadMin": 0.0,
+        "loadMax": 1.0,
+        "startCost": 0.0,
+        "minOnline": 0.0,
+        "minOffline": 0.0,
+        "maxOnline": 0.0,
+        "maxOffline": 0.0,
+        "initialState": false,
+        "isScenarioIndependent": false,
+        "delay": 0.0,
+        "cf": [],
+        "effTs": []
+        },
+        {
+        "name": "pv1",
+        "conversion": "UNIT",
+        "isCfFix": true,
+        "isOnline": false,
+        "isRes": false,
+        "eff": 1.0,
+        "loadMin": 0.0,
+        "loadMax": 1.0,
+        "startCost": 0.0,
+        "minOnline": 0.0,
+        "minOffline": 0.0,
+        "maxOnline": 0.0,
+        "maxOffline": 0.0,
+        "initialState": false,
+        "isScenarioIndependent": false,
+        "delay": 0.0,
+        "cf": [],
+        "effTs": []
+        },
+        {
+        "name": "pv2",
+        "conversion": "UNIT",
+        "isCfFix": false,
+        "isOnline": false,
+        "isRes": false,
+        "eff": 1.0,
+        "loadMin": 0.0,
+        "loadMax": 1.0,
+        "startCost": 0.0,
+        "minOnline": 0.0,
+        "minOffline": 0.0,
+        "maxOnline": 0.0,
+        "maxOffline": 0.0,
+        "initialState": false,
+        "isScenarioIndependent": false,
+        "delay": 0.0,
+        "cf": [],
+        "effTs": []
+        },
+        {
+        "name": "dh_tra",
+        "conversion": "TRANSFER",
+        "isCfFix": false,
+        "isOnline": false,
+        "isRes": false,
+        "eff": 0.99,
+        "loadMin": 0.0,
+        "loadMax": 1.0,
+        "startCost": 0.0,
+        "minOnline": 0.0,
+        "minOffline": 0.0,
+        "maxOnline": 0.0,
+        "maxOffline": 0.0,
+        "initialState": false,
+        "isScenarioIndependent": false,
+        "delay": 0.0,
+        "cf": [],
+        "effTs": []
+        }
+    ],
+    "node_groups": [
+            {
+            "name": "elc_res",
+            "nodes": ["elc"]
+            }
+        ],
+    "process_groups": [
+            {
+            "name": "p1",
+            "processes": ["ngchp", "hp1", "p2x1"]
+            }
+        ]
+}
