@@ -66,8 +66,7 @@ input InputDataSetupInput {
   "Indicates whether reserves can be realised. If set to false, no realisation occurs." useReserveRealisation: Boolean
   "Indicates if dummy variables should be used in the node balance equations." useNodeDummyVariables: Boolean
   "Indicates if dummy variables should be used in the ramp balance equations." useRampDummyVariables: Boolean
-  "Indicates the length of a common start, where the parameters and variable values are equal across 
-all scenarios. Default is 0." commonTimesteps: Int
+  "Indicates the length of a common start, where the parameters and variable values are equal across all scenarios. Default is 0." commonTimesteps: Int
   "Name of the common start scenario, if it is used." commonScenarioName: String
   nodeDummyVariableCost: Float
   rampDummyVariableCost: Float
@@ -137,7 +136,7 @@ input NewNodeDiffusion {
 
 input NewProcess {
   "Name of the process." name: String!
-  "Indicates the type of the process. Options: Unit, Transfer, Market" conversion: Conversion!       
+  "Indicates the type of the process. Options: Unit, Transfer, Market" conversion: Conversion!
   "Indicates if the process has to match the capacity factor time series." isCfFix: Boolean!
   "Indicates if the process is an online/offline unit." isOnline: Boolean!
   "Indicates if the process participates in reserve markets" isRes: Boolean!
@@ -153,6 +152,8 @@ input NewProcess {
   "If true, forces the online variable of the process to be equal in all scenarios." isScenarioIndependent: Boolean!
   "Capacity factor time series for processes with cf functionality." cf: [ValueInput!]!
   "Value time series of the efficiency of processes" effTs: [ValueInput!]!
+  "Value time series of the efficiency of processes" effOps: [String!]!
+  "Value time series of the efficiency of processes" effFun: [PointInput!]!
 }
 
 input NewReserveType {
@@ -171,21 +172,7 @@ input NewSeries {
   values: [Float!]!
 }
 
-input NewTopology {
-  capacity: Float!
-  vomCost: Float!
-  rampUp: Float!
-  rampDown: Float!
-  initialLoad: Float!
-  initialFlow: Float!
-  capTs: [ValueInput!]!
-}
-
-input SettingsInput {
-  location: LocationInput
-}
-
-input StateInput {
+input NewState {
   inMax: Float!
   outMax: Float!
   stateLossProportional: Float!
@@ -196,6 +183,26 @@ input StateInput {
   isTemp: Boolean!
   tEConversion: Float!
   residualValue: Float!
+}
+
+input NewTopology {
+  capacity: Float!
+  vomCost: Float!
+  rampUp: Float!
+  rampDown: Float!
+  initialLoad: Float!
+  initialFlow: Float!
+  capTs: [ValueInput!]!
+}
+
+"Point input."
+input PointInput {
+  x: Float!
+  y: Float!
+}
+
+input SettingsInput {
+  location: LocationInput
 }
 
 input StateUpdate {
@@ -429,15 +436,14 @@ type Mutation {
   "Delete a process and all items that depend on that process."
   deleteProcess(name: String!): MaybeError!
   "Create new topology and add it to process."
-  createTopology(topology: NewTopology!, sourceNodeName: String, processName: String!, sinkNodeName: 
-String): ValidationErrors!
-  deleteTopology(sourceNodeName: String, processName: String!, sinkNodeName: String): MaybeError!    
+  createTopology(topology: NewTopology!, sourceNodeName: String, processName: String!, sinkNodeName: String): ValidationErrors!
+  deleteTopology(sourceNodeName: String, processName: String!, sinkNodeName: String): MaybeError!
   "Create new node."
   createNode(node: NewNode!): ValidationErrors!
   "Add node to node group."
   addNodeToGroup(nodeName: String!, groupName: String!): MaybeError!
   "Set state for node. Null clears the state."
-  setNodeState(state: StateInput, nodeName: String!): ValidationErrors!
+  setNodeState(state: NewState, nodeName: String!): ValidationErrors!
   "Update state of a node. The state has to be set."
   updateNodeState(state: StateUpdate!, nodeName: String!): ValidationErrors!
   connectNodeInflowToTemperatureForecast(nodeName: String!, forecastName: String!, forecastType: String!): MaybeError!
@@ -469,8 +475,7 @@ String): ValidationErrors!
   deleteGenConstraint(name: String!): MaybeError!
   "Create new flow constraint factor and add it to generic constraint."
   createFlowConFactor(factor: [ValueInput!]!, constraintName: String!, processName: String!, sourceOrSinkNodeName: String!): ValidationErrors!
-  deleteFlowConFactor(constraintName: String!, processName: String!, sourceOrSinkNodeName: String!): 
-MaybeError!
+  deleteFlowConFactor(constraintName: String!, processName: String!, sourceOrSinkNodeName: String!): MaybeError!
   "Create new state constraint factor and add it to generic constraint."
   createStateConFactor(factor: [ValueInput!]!, constraintName: String!, nodeName: String!): ValidationErrors!
   deleteStateConFactor(constraintName: String!, nodeName: String!): MaybeError!

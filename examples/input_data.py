@@ -1,6 +1,7 @@
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 import json
+from utilities import prune_nones, pick_keys, normalize_point, normalize_points
 
 transport = RequestsHTTPTransport(
     url="http://localhost:3030/graphql",
@@ -62,270 +63,299 @@ query {
 model_result = client.execute(model_query)
 print("Model data:", model_result)
 
-nodes = data.get('nodes', [])
+# ---------- NODES ----------
+create_node_mutation = gql("""
+mutation CreateNode($node: NewNode!) {
+  createNode(node: $node) {
+    errors { field message }
+  }
+}
+""")
 
-for node in nodes:
-    mutation = gql(f"""
-    mutation {{
-        createNode(node: {{
-            name: "{node['name']}",
-            isCommodity: {str(node['isCommodity']).lower()},
-            isMarket: {str(node['isMarket']).lower()},
-            isRes: {str(node['isRes']).lower()},
-            cost: [],
-            inflow: []
-        }}) {{
-            errors {{
-                field
-                message
-            }}
-        }}
-    }}
-    """)
-    result = client.execute(mutation)
-    print(f"CreateNode result for {node['name']}:", result)
+NODE_KEYS = {"name","isCommodity","isMarket","isRes","cost","inflow"}
+
+nodes = data.get('nodes', [])
+for raw in nodes:
+    node_input = pick_keys(raw, NODE_KEYS)
+    # schema requires cost: [ValueInput!]! and inflow: [ForecastValueInput!]!
+    node_input.setdefault("cost", [])
+    node_input.setdefault("inflow", [])
+    node_input = prune_nones(node_input)
+    result = client.execute(create_node_mutation, variable_values={"node": node_input})
+    print(f"CreateNode result for {raw.get('name')}:", result)
+
+# ---------- NODE STATE ----------
+set_node_state_mutation = gql("""
+mutation SetNodeState($nodeName: String!, $state: NewState) {
+  setNodeState(state: $state, nodeName: $nodeName) {
+    errors { field message }
+  }
+}
+""")
+
+node_states = data.get("node_states", [])
+for entry in node_states:
+    node_name = entry["nodeName"]
+    state = entry["state"]
+
+    # GraphQL NewState has no nullables -> ensure all fields are present
+    required_fields = [
+        "inMax","outMax","stateLossProportional","stateMin","stateMax",
+        "initialState","isScenarioIndependent","isTemp","tEConversion","residualValue"
+    ]
+    missing = [k for k in required_fields if k not in state]
+    if missing:
+        raise ValueError(f"State for node {node_name!r} missing fields: {', '.join(missing)}")
+
+    res = client.execute(
+        set_node_state_mutation,
+        variable_values={"nodeName": node_name, "state": state}
+    )
+    print(f"SetNodeState result for {node_name}:", res)
+
+
+# ---------- PROCESSES ----------
+create_process_mutation = gql("""
+mutation CreateProcess($process: NewProcess!) {
+  createProcess(process: $process) {
+    errors { field message }
+  }
+}
+""")
+
+# Match NewProcess fields in the schema
+PROCESS_KEYS = {
+    "name","conversion","isCfFix","isOnline","isRes","eff",
+    "loadMin","loadMax","startCost","minOnline","maxOnline",
+    "minOffline","maxOffline","initialState","isScenarioIndependent",
+    "cf","effTs","effOpsFun"
+}
+
+# Required *scalar/boolean/enum* fields that must be present (non-null in schema)
+REQUIRED_PROCESS_FIELDS = {
+    "name","conversion","isCfFix","isOnline","isRes","eff",
+    "loadMin","loadMax","startCost","minOnline","maxOnline",
+    "minOffline","maxOffline","initialState","isScenarioIndependent"
+}
 
 processes = data.get('processes', [])
-for process in processes:
-    add_process_mutation = gql(f"""
-    mutation CreateProcess {{
-        createProcess(process: {{
-            name: "{process['name']}",
-            conversion: {process['conversion']},
-            isCfFix: {str(process['isCfFix']).lower()},
-            isOnline: {str(process['isOnline']).lower()},
-            isRes: {str(process['isRes']).lower()},
-            eff: {process['eff']},
-            loadMin: {process['loadMin']},
-            loadMax: {process['loadMax']},
-            startCost: {process['startCost']},
-            minOnline: {process['minOnline']},
-            maxOnline: {process['maxOnline']},
-            minOffline: {process['minOffline']},
-            maxOffline: {process['maxOffline']},
-            initialState: {str(process['initialState']).lower()},
-            isScenarioIndependent: {str(process['isScenarioIndependent']).lower()},
-            cf: [],
-            effTs: []
-        }}) {{
-            errors {{
-                field
-                message
-            }}
-        }}
-    }}
-    """)
-    add_process_result = client.execute(add_process_mutation)
-    print(f"CreateProcess result for {process['name']}:", add_process_result)
+for raw in processes:
+    # Validate: fail fast if any required scalar is missing
+    missing = [k for k in REQUIRED_PROCESS_FIELDS if raw.get(k) is None]
+    if missing:
+        raise ValueError(f"Process {raw.get('name')!r}: missing required fields: {', '.join(missing)}")
+
+    proc_input = pick_keys(raw, PROCESS_KEYS)
+
+    # Non-null list fields -> default to [] if not provided
+    proc_input.setdefault("cf", [])
+    proc_input.setdefault("effTs", [])
+    proc_input.setdefault("effOpsFun", [])
+
+    # Normalize points (no-op if already {'x': float, 'y': float})
+    proc_input["effOpsFun"] = normalize_points(proc_input["effOpsFun"])
+
+    # Drop any explicit Nones
+    proc_input = prune_nones(proc_input)
+
+    add_process_result = client.execute(
+        create_process_mutation,
+        variable_values={"process": proc_input}
+    )
+    print(f"CreateProcess result for {raw.get('name')}:", add_process_result)
+
+# ---------- NODE GROUPS ----------
+create_node_group_mutation = gql("""
+mutation CreateNodeGroup($name: String!) {
+  createNodeGroup(name: $name) { message }
+}
+""")
 
 node_groups = data.get('node_groups', [])
+for ng in node_groups:
+    result = client.execute(create_node_group_mutation, variable_values={"name": ng["name"]})
+    print(f"CreateNodeGroup result for {ng.get('name')}:", result)
 
-for node_group in node_groups:
-    mutation = gql(f"""
-    mutation {{
-        createNodeGroup(name: "{node_group['name']}") {{
-            message
-        }}
-    }}
-    """)
-    result = client.execute(mutation)
-    print(f"CreateNodeGroup result for {node_group['name']}:", result)
+# ---------- PROCESS GROUPS ----------
+create_process_group_mutation = gql("""
+mutation CreateProcessGroup($name: String!) {
+  createProcessGroup(name: $name) { message }
+}
+""")
 
 process_groups = data.get('process_groups', [])
-for process_group in process_groups:
-    mutation = gql(f"""
-    mutation {{
-        createProcessGroup(name: "{process_group['name']}") {{
-            message
-        }}
-    }}
-    """)
-    result = client.execute(mutation)
-    print(f"CreateProcessGroup result for {process_group['name']}:", result)
+for pg in process_groups:
+    result = client.execute(create_process_group_mutation, variable_values={"name": pg["name"]})
+    print(f"CreateProcessGroup result for {pg.get('name')}:", result)
 
-# Example mutation to add a scenario
-add_scenario_mutation = gql("""
-mutation CreateScenario {
-    createScenario(name: "ExampleScenario", weight: 1.0) {
-        message
-    }
-}
-""")
-add_scenario_result = client.execute(add_scenario_mutation)
-print("CreateScenario result:", add_scenario_result)
-
-# Example mutation to add a market to the model
-add_market_mutation = gql("""
-mutation CreateMarket {
-    createMarket(market: {
-        name: "ExampleMarket",
-        mType: ENERGY,
-        node: "ExampleNode",
-        processGroup: "ExampleProcessGroup",
-        direction: UP,
-        realisation: [],
-        reserveType: "ReserveType",
-        isBid: true,
-        isLimited: false,
-        minBid: 0.0,
-        maxBid: 100.0,
-        fee: 0.0,
-        price: [
-        {
-        scenario: "ExampleScenario",
-        constant: 50.0
-        }],
-        upPrice: [{
-        scenario: "ExampleScenario",
-        constant: 51.0
-        }],
-        downPrice: [{
-        scenario: "ExampleScenario",
-        constant: 49.0
-        }],
-        reserveActivationPrice: []
-    }) {
-        errors {
-            field
-            message
-        }
-    }
+# ---------- SCENARIOS ----------
+create_scenario_mutation = gql("""
+mutation CreateScenario($name: String!, $weight: Float!) {
+  createScenario(name: $name, weight: $weight) { message }
 }
 """)
 
-add_market_result = client.execute(add_market_mutation)
-print("CreateMarket result:", add_market_result)
+scenarios = data.get("scenarios", [{"name": "ExampleScenario", "weight": 1.0}])
+for sc in scenarios:
+    vars_ = {"name": sc["name"], "weight": float(sc.get("weight", 1.0))}
+    add_scenario_result = client.execute(create_scenario_mutation, variable_values=vars_)
+    print(f"CreateScenario result for {sc['name']}:", add_scenario_result)
 
-# Example mutation to add a risk to the model
-add_risk_mutation = gql("""
-mutation CreateRisk {
-    createRisk(risk: {
-        parameter: "HighDemandSpike",
-        value: 0.15
-    }) {
-        errors {
-            field
-            message
-        }
-    }
+# ---------- MARKETS ----------
+create_market_mutation = gql("""
+mutation CreateMarket($market: NewMarket!) {
+  createMarket(market: $market) { errors { field message } }
 }
 """)
 
-add_risk_result = client.execute(add_risk_mutation)
-print("CreateRisk result:", add_risk_result)
-# Example mutation to add a node diffusion to the model
-add_nodediffusion_mutation = gql("""
-mutation CreateNodeDiffusion {
-    createNodeDiffusion(newDiffusion: {
-        fromNode: "ExampleNode",
-        toNode: "ExampleNode2",
-        coefficient: [
-            { scenario: "ExampleScenario", constant: 0.5 }
-        ]
-    }) {
-        errors {
-            field
-            message
-        }
-    }
+MARKET_KEYS = {
+    "name","mType","node","processGroup","direction",
+    "realisation","reserveType","isBid","isLimited",
+    "minBid","maxBid","fee","price","upPrice","downPrice","reserveActivationPrice"
+}
+
+markets = data.get("markets", [])
+for raw in markets:
+    mkt = pick_keys(raw, MARKET_KEYS)
+    # ensure required lists exist
+    mkt.setdefault("realisation", [])
+    mkt.setdefault("price", [])
+    mkt.setdefault("upPrice", [])
+    mkt.setdefault("downPrice", [])
+    mkt.setdefault("reserveActivationPrice", [])
+    # enums as strings in variables are fine: "ENERGY", "RESERVE", "UP", "RES_UP", ...
+    mkt = prune_nones(mkt)
+    add_market_result = client.execute(create_market_mutation, variable_values={"market": mkt})
+    print(f"CreateMarket result for {raw.get('name')}:", add_market_result)
+
+# ---------- RISKS ----------
+create_risk_mutation = gql("""
+mutation CreateRisk($risk: NewRisk!) {
+  createRisk(risk: $risk) { errors { field message } }
 }
 """)
 
-add_nodediffusion_result = client.execute(add_nodediffusion_mutation)
-print("CreateNodeDiffusion result:", add_nodediffusion_result)
-# Example mutation to add a node delay to the model
-add_nodedelay_mutation = gql("""
-mutation CreateNodeDelay {
-    createNodeDelay(delay: {
-        fromNode: "ExampleNode",
-        toNode: "ExampleNode2",
-        delay: 2.5,
-        minDelayFlow: 0.0,
-        maxDelayFlow: 10.0
-    }) {
-        errors {
-            field
-            message
-        }
-    }
+RISK_KEYS = {"parameter","value"}
+
+risks = data.get("risks", [])
+for raw in risks:
+    risk = prune_nones(pick_keys(raw, RISK_KEYS))
+    add_risk_result = client.execute(create_risk_mutation, variable_values={"risk": risk})
+    print(f"CreateRisk result for {raw.get('parameter')}:", add_risk_result)
+
+# ---------- NODE DIFFUSION ----------
+create_node_diffusion_mutation = gql("""
+mutation CreateNodeDiffusion($diff: NewNodeDiffusion!) {
+  createNodeDiffusion(newDiffusion: $diff) { errors { field message } }
 }
 """)
 
-add_nodedelay_result = client.execute(add_nodedelay_mutation)
-print("CreateNodeDelay result:", add_nodedelay_result)
-# Example mutation to create node history
-add_node_history_mutation = gql("""
-mutation CreateNodeHistory {
-    createNodeHistory(nodeName: "ExampleNode") {
-        errors {
-            field
-            message
-        }
-    }
+NODE_DIFFUSION_KEYS = {"fromNode","toNode","coefficient"}
+
+node_diffusions = data.get("node_diffusions", [])
+for raw in node_diffusions:
+    diff = pick_keys(raw, NODE_DIFFUSION_KEYS)
+    diff.setdefault("coefficient", [])
+    diff = prune_nones(diff)
+    add_nodediffusion_result = client.execute(
+        create_node_diffusion_mutation, variable_values={"diff": diff}
+    )
+    print(f"CreateNodeDiffusion result {diff.get('fromNode')} -> {diff.get('toNode')}:", add_nodediffusion_result)
+
+# ---------- NODE DELAY ----------
+create_node_delay_mutation = gql("""
+mutation CreateNodeDelay($delay: NewNodeDelay!) {
+  createNodeDelay(delay: $delay) { errors { field message } }
 }
 """)
 
-add_node_history_result = client.execute(add_node_history_mutation)
-print("CreateNodeHistory result:", add_node_history_result)
-# Example mutation to create a generic constraint
-add_genconstraint_mutation = gql("""
-mutation CreateGenConstraint {
-    createGenConstraint(constraint: {
-        name: "ExampleGenConstraint",
-        gcType: LESS_THAN,
-        isSetpoint: false,
-        penalty: 100.0,
-        constant: [
-            { scenario: "ExampleScenario", constant: 50.0 }
-        ]
-    }) {
-        errors {
-            field
-            message
-        }
-    }
+NODE_DELAY_KEYS = {"fromNode","toNode","delay","minDelayFlow","maxDelayFlow"}
+
+node_delays = data.get("node_delays", [])
+for raw in node_delays:
+    dly = prune_nones(pick_keys(raw, NODE_DELAY_KEYS))
+    add_nodedelay_result = client.execute(
+        create_node_delay_mutation, variable_values={"delay": dly}
+    )
+    print(f"CreateNodeDelay result {dly.get('fromNode')} -> {dly.get('toNode')}:", add_nodedelay_result)
+
+# ---------- NODE HISTORY (optional steps) ----------
+create_node_history_mutation = gql("""
+mutation CreateNodeHistory($nodeName: String!) {
+  createNodeHistory(nodeName: $nodeName) { errors { field message } }
 }
 """)
 
-add_genconstraint_result = client.execute(add_genconstraint_mutation)
-print("CreateGenConstraint result:", add_genconstraint_result)
-
-# Example mutation to create a reserve type
-add_reservetype_mutation = gql("""
-mutation CreateReserveType {
-    createReserveType(reserveType: {
-        name: "ExampleReserveType",
-        rampRate: 1.5
-    }) {
-        errors {
-            field
-            message
-        }
-    }
+add_history_step_mutation = gql("""
+mutation AddStep($nodeName: String!, $step: NewSeries!) {
+  addStepToNodeHistory(nodeName: $nodeName, step: $step) { errors { field message } }
 }
 """)
 
-add_reservetype_result = client.execute(add_reservetype_mutation)
-print("CreateReserveType result:", add_reservetype_result)
+# Expect entries like:
+# { "nodeName": "ExampleNode", "steps": [ { "scenario":"s1", "durations":[{"hours":1,"minutes":0,"seconds":0}], "values":[1.0] } ] }
+node_histories = data.get("node_histories", [])
+for raw in node_histories:
+    node_name = raw["nodeName"]
+    res = client.execute(create_node_history_mutation, variable_values={"nodeName": node_name})
+    print(f"CreateNodeHistory result for {node_name}:", res)
 
-# Example mutation to create an inflow block
-add_inflowblock_mutation = gql("""
-mutation CreateInflowBlock {
-    createInflowBlock(inflowBlock: {
-        name: "ExampleInflowBlock",
-        node: "ExampleNode",
-        data: [
-            { scenario: "ExampleScenario", constant: 42.0 }
-        ]
-    }) {
-        errors {
-            field
-            message
-        }
-    }
+    for step in raw.get("steps", []):
+        step_clean = prune_nones(step)
+        res2 = client.execute(add_history_step_mutation, variable_values={"nodeName": node_name, "step": step_clean})
+        print(f"AddStepToNodeHistory result for {node_name}:", res2)
+
+# ---------- GENERIC CONSTRAINT ----------
+create_gen_constraint_mutation = gql("""
+mutation CreateGenConstraint($constraint: NewGenConstraint!) {
+  createGenConstraint(constraint: $constraint) { errors { field message } }
 }
 """)
 
-add_inflowblock_result = client.execute(add_inflowblock_mutation)
-print("CreateInflowBlock result:", add_inflowblock_result)
+GEN_CONSTRAINT_KEYS = {"name","gcType","isSetpoint","penalty","constant"}
 
+gen_constraints = data.get("gen_constraints", [])
+for raw in gen_constraints:
+    gc = pick_keys(raw, GEN_CONSTRAINT_KEYS)
+    gc.setdefault("constant", [])
+    gc = prune_nones(gc)
+    add_genconstraint_result = client.execute(
+        create_gen_constraint_mutation, variable_values={"constraint": gc}
+    )
+    print(f"CreateGenConstraint result for {gc.get('name')}:", add_genconstraint_result)
+
+# ---------- RESERVE TYPE ----------
+create_reserve_type_mutation = gql("""
+mutation CreateReserveType($rt: NewReserveType!) {
+  createReserveType(reserveType: $rt) { errors { field message } }
+}
+""")
+
+RESERVE_TYPE_KEYS = {"name","rampRate"}
+
+reserve_types = data.get("reserve_types", [])
+for raw in reserve_types:
+    rt = prune_nones(pick_keys(raw, RESERVE_TYPE_KEYS))
+    add_reservetype_result = client.execute(
+        create_reserve_type_mutation, variable_values={"rt": rt}
+    )
+    print(f"CreateReserveType result for {rt.get('name')}:", add_reservetype_result)
+
+# ---------- INFLOW BLOCK ----------
+create_inflow_block_mutation = gql("""
+mutation CreateInflowBlock($ib: NewInflowBlock!) {
+  createInflowBlock(inflowBlock: $ib) { errors { field message } }
+}
+""")
+
+INFLOW_BLOCK_KEYS = {"name","node","data"}
+
+inflow_blocks = data.get("inflow_blocks", [])
+for raw in inflow_blocks:
+    ib = pick_keys(raw, INFLOW_BLOCK_KEYS)
+    ib.setdefault("data", [])
+    ib = prune_nones(ib)
+    add_inflowblock_result = client.execute(
+        create_inflow_block_mutation, variable_values={"ib": ib}
+    )
+    print(f"CreateInflowBlock result for {ib.get('name')}:", add_inflowblock_result)

@@ -41,138 +41,608 @@
       "inflow": []
     }
   ],
+  "node_states": [
+    {
+      "nodeName": "dh",
+      "state": {
+        "inMax": 3.0,
+        "outMax": 3.0,
+        "stateLossProportional": 0.001,
+        "stateMin": 0.0,
+        "stateMax": 10.0,
+        "initialState": 10.0,
+        "isScenarioIndependent": false,
+        "isTemp": false,
+        "tEConversion": 1.0,
+        "residualValue": 0.0
+      }
+    },
+    {
+      "nodeName": "h2",
+      "state": {
+        "inMax": 1.0,
+        "outMax": 1.0,
+        "stateLossProportional": 0.0,
+        "stateMin": 0.0,
+        "stateMax": 4.0,
+        "initialState": 0.0,
+        "isScenarioIndependent": false,
+        "isTemp": false,
+        "tEConversion": 1.0,
+        "residualValue": 0.0
+      }
+    }
+  ],
   "processes": [
+    {
+      "name": "ngchp",
+      "conversion": "UNIT",
+      "isCfFix": false,
+      "isOnline": true,
+      "isRes": true,
+      "eff": 0.9,
+      "loadMin": 0.3,
+      "loadMax": 1,
+      "startCost": 0,
+      "minOnline": 4,
+      "minOffline": 3,
+      "maxOnline": 0,
+      "maxOffline": 0,
+      "initialState": true,
+      "isScenarioIndependent": true,
+      "delay": 0,
+      "cf": [],
+      "effTs": [],
+      "effOpsFun": [
         {
-        "name": "ngchp",
-        "conversion": "UNIT",
-        "isCfFix": false,
-        "isOnline": true,
-        "isRes": true,
-        "eff": 0.9,
-        "loadMin": 0.3,
-        "loadMax": 1.0,
-        "startCost": 0.0,
-        "minOnline": 4.0,
-        "minOffline": 3.0,
-        "maxOnline": 0.0,
-        "maxOffline": 0.0,
-        "initialState": true,
-        "isScenarioIndependent": true,
-        "delay": 0.0,
-        "cf": [],
-        "effTs": []
+          "x": 0.4,
+          "y": 0.8
         },
         {
-        "name": "hp1",
-        "conversion": "UNIT",
-        "isCfFix": false,
-        "isOnline": false,
-        "isRes": true,
-        "eff": 3.0,
-        "loadMin": 0.0,
-        "loadMax": 1.0,
-        "startCost": 0.0,
-        "minOnline": 0.0,
-        "minOffline": 0.0,
-        "maxOnline": 0.0,
-        "maxOffline": 0.0,
-        "initialState": false,
-        "isScenarioIndependent": false,
-        "delay": 0.0,
-        "cf": [],
-        "effTs": []
+          "x": 0.6,
+          "y": 0.78
         },
         {
-        "name": "p2x1",
-        "conversion": "UNIT",
-        "isCfFix": false,
-        "isOnline": false,
-        "isRes": true,
-        "eff": 0.7,
-        "loadMin": 0.0,
-        "loadMax": 1.0,
-        "startCost": 0.0,
-        "minOnline": 0.0,
-        "minOffline": 0.0,
-        "maxOnline": 0.0,
-        "maxOffline": 0.0,
-        "initialState": false,
-        "isScenarioIndependent": false,
-        "delay": 0.0,
-        "cf": [],
-        "effTs": []
+          "x": 0.8,
+          "y": 0.75
         },
         {
-        "name": "pv1",
-        "conversion": "UNIT",
-        "isCfFix": true,
-        "isOnline": false,
-        "isRes": false,
-        "eff": 1.0,
-        "loadMin": 0.0,
-        "loadMax": 1.0,
-        "startCost": 0.0,
-        "minOnline": 0.0,
-        "minOffline": 0.0,
-        "maxOnline": 0.0,
-        "maxOffline": 0.0,
-        "initialState": false,
-        "isScenarioIndependent": false,
-        "delay": 0.0,
-        "cf": [],
-        "effTs": []
+          "x": 0.9,
+          "y": 0.7
         },
         {
-        "name": "pv2",
-        "conversion": "UNIT",
-        "isCfFix": false,
-        "isOnline": false,
-        "isRes": false,
-        "eff": 1.0,
-        "loadMin": 0.0,
-        "loadMax": 1.0,
-        "startCost": 0.0,
-        "minOnline": 0.0,
-        "minOffline": 0.0,
-        "maxOnline": 0.0,
-        "maxOffline": 0.0,
-        "initialState": false,
-        "isScenarioIndependent": false,
-        "delay": 0.0,
-        "cf": [],
-        "effTs": []
-        },
-        {
-        "name": "dh_tra",
-        "conversion": "TRANSFER",
-        "isCfFix": false,
-        "isOnline": false,
-        "isRes": false,
-        "eff": 0.99,
-        "loadMin": 0.0,
-        "loadMax": 1.0,
-        "startCost": 0.0,
-        "minOnline": 0.0,
-        "minOffline": 0.0,
-        "maxOnline": 0.0,
-        "maxOffline": 0.0,
-        "initialState": false,
-        "isScenarioIndependent": false,
-        "delay": 0.0,
-        "cf": [],
-        "effTs": []
+          "x": 1,
+          "y": 0.65
         }
-    ],
-    "node_groups": [
-            {
-            "name": "elc_res",
-            "nodes": ["elc"]
-            }
-        ],
-    "process_groups": [
-            {
-            "name": "p1",
-            "processes": ["ngchp", "hp1", "p2x1"]
-            }
-        ]
+      ]
+    },
+    {
+      "name": "hp1",
+      "conversion": "UNIT",
+      "isCfFix": false,
+      "isOnline": false,
+      "isRes": true,
+      "eff": 3,
+      "loadMin": 0,
+      "loadMax": 1,
+      "startCost": 0,
+      "minOnline": 0,
+      "minOffline": 0,
+      "maxOnline": 0,
+      "maxOffline": 0,
+      "initialState": false,
+      "isScenarioIndependent": false,
+      "delay": 0,
+      "cf": [],
+      "effTs": [],
+      "effOpsFun": []
+    },
+    {
+      "name": "p2x1",
+      "conversion": "UNIT",
+      "isCfFix": false,
+      "isOnline": false,
+      "isRes": true,
+      "eff": 0.7,
+      "loadMin": 0,
+      "loadMax": 1,
+      "startCost": 0,
+      "minOnline": 0,
+      "minOffline": 0,
+      "maxOnline": 0,
+      "maxOffline": 0,
+      "initialState": false,
+      "isScenarioIndependent": false,
+      "delay": 0,
+      "cf": [],
+      "effTs": [],
+      "effOpsFun": []
+    },
+    {
+      "name": "pv1",
+      "conversion": "UNIT",
+      "isCfFix": true,
+      "isOnline": false,
+      "isRes": false,
+      "eff": 1,
+      "loadMin": 0,
+      "loadMax": 1,
+      "startCost": 0,
+      "minOnline": 0,
+      "minOffline": 0,
+      "maxOnline": 0,
+      "maxOffline": 0,
+      "initialState": false,
+      "isScenarioIndependent": false,
+      "delay": 0,
+      "cf": [],
+      "effTs": [],
+      "effOpsFun": []
+    },
+    {
+      "name": "pv2",
+      "conversion": "UNIT",
+      "isCfFix": false,
+      "isOnline": false,
+      "isRes": false,
+      "eff": 1,
+      "loadMin": 0,
+      "loadMax": 1,
+      "startCost": 0,
+      "minOnline": 0,
+      "minOffline": 0,
+      "maxOnline": 0,
+      "maxOffline": 0,
+      "initialState": false,
+      "isScenarioIndependent": false,
+      "delay": 0,
+      "cf": [],
+      "effTs": [],
+      "effOpsFun": []
+    },
+    {
+      "name": "dh_tra",
+      "conversion": "TRANSFER",
+      "isCfFix": false,
+      "isOnline": false,
+      "isRes": false,
+      "eff": 0.99,
+      "loadMin": 0,
+      "loadMax": 1,
+      "startCost": 0,
+      "minOnline": 0,
+      "minOffline": 0,
+      "maxOnline": 0,
+      "maxOffline": 0,
+      "initialState": false,
+      "isScenarioIndependent": false,
+      "delay": 0,
+      "cf": [],
+      "effTs": []
+    }
+  ],
+  "node_groups": [
+    {
+      "name": "elc_res",
+      "nodes": [
+        "elc"
+      ]
+    }
+  ],
+  "process_groups": [
+    {
+      "name": "p1",
+      "processes": [
+        "ngchp",
+        "hp1",
+        "p2x1"
+      ]
+    }
+  ],
+  "markets": [
+    {
+      "name": "npe",
+      "mType": "ENERGY",
+      "node": "elc",
+      "processGroup": "p1",
+      "direction": null,
+      "isBid": true,
+      "isLimited": false,
+      "minBid": 0,
+      "maxBid": 0,
+      "fee": 0,
+      "realisation": [],
+      "price": [
+        {
+          "scenario": "s1",
+          "series": [48, 60, 58, 51, 37, 34, 45, 41, 55, 59, 60, 41, 46, 38, 46, 45, 41, 46, 52, 56, 33, 43, 57, 32]
+        },
+        {
+          "scenario": "s2",
+          "series": [72, 90, 87, 76.5, 55.5, 51, 67.5, 61.5, 82.5, 88.5, 90, 61.5, 69, 57, 69, 67.5, 61.5, 69, 78, 84, 49.5, 64.5, 85.5, 48]
+        },
+        {
+          "scenario": "s3",
+          "series": [24, 30, 29, 25.5, 18.5, 17, 22.5, 20.5, 27.5, 29.5, 30, 20.5, 23, 19, 23, 22.5, 20.5, 23, 26, 28, 16.5, 21.5, 28.5, 16]
+        }
+      ],
+      "upPrice": [
+        {
+          "scenario": "s1",
+          "series": [52.8, 66, 63.8, 56.1, 40.7, 37.4, 49.5, 45.1, 60.5, 64.9, 66, 45.1, 50.6, 41.8, 50.6, 49.5, 45.1, 50.6, 57.2, 61.6, 36.3, 47.3, 62.7, 35.2]
+        },
+        {
+          "scenario": "s2",
+          "series": [79.2, 99, 95.7, 84.15, 61.05, 56.1, 74.25, 67.65, 90.75, 97.35, 99, 67.65, 75.9, 62.7, 75.9, 74.25, 67.65, 75.9, 85.8, 92.4, 54.45, 70.95, 94.05, 52.8]
+        },
+        {
+          "scenario": "s3",
+          "series": [26.4, 33, 31.9, 28.05, 20.35, 18.7, 24.75, 22.55, 30.25, 32.45, 33, 22.55, 25.3, 20.9, 25.3, 24.75, 22.55, 25.3, 28.6, 30.8, 18.15, 23.65, 31.35, 17.6]
+        }
+      ],
+      "downPrice": [
+        {
+          "scenario": "s1",
+          "series": [43.2, 54, 52.2, 45.9, 33.3, 30.6, 40.5, 36.9, 49.5, 53.1, 54, 36.9, 41.4, 34.2, 41.4, 40.5, 36.9, 41.4, 46.8, 50.4, 29.7, 38.7, 51.3, 28.8]
+        },
+        {
+          "scenario": "s2",
+          "series": [64.8, 81, 78.3, 68.85, 49.95, 45.9, 60.75, 55.35, 74.25, 79.65, 81, 55.35, 62.1, 51.3, 62.1, 60.75, 55.35, 62.1, 70.2, 75.6, 44.55, 58.05, 76.95, 43.2]
+        },
+        {
+          "scenario": "s3",
+          "series": [21.6, 27, 26.1, 22.95, 16.65, 15.3, 20.25, 18.45, 24.75, 26.55, 27, 18.45, 20.7, 17.1, 20.7, 20.25, 18.45, 20.7, 23.4, 25.2, 14.85, 19.35, 25.65, 14.4]
+        }
+      ],
+      "reserveActivationPrice": []
+    },
+
+    {
+      "name": "fcr_n",
+      "mType": "RESERVE",
+      "node": "elc_res",
+      "processGroup": "p1",
+      "direction": "UP_DOWN",
+      "reserveType": "fast",
+      "isBid": true,
+      "isLimited": true,
+      "minBid": 0.5,
+      "maxBid": 10,
+      "fee": 50,
+      "realisation": [],
+      "price": [
+        {
+          "scenario": "s1",
+          "series": [
+            5,
+            34,
+            92,
+            66,
+            64,
+            7,
+            92,
+            94,
+            87,
+            3,
+            44,
+            99,
+            60,
+            91,
+            67,
+            85,
+            42,
+            71,
+            76,
+            70,
+            74,
+            84,
+            59,
+            65
+          ]
+        },
+        {
+          "scenario": "s2",
+          "series": [
+            6,
+            40.8,
+            110.39999999999999,
+            79.2,
+            76.8,
+            8.4,
+            110.39999999999999,
+            112.8,
+            104.39999999999999,
+            3.5999999999999996,
+            52.8,
+            118.8,
+            72,
+            109.2,
+            80.39999999999999,
+            102,
+            50.4,
+            85.2,
+            91.2,
+            84,
+            88.8,
+            100.8,
+            70.8,
+            78
+          ]
+        },
+        {
+          "scenario": "s3",
+          "series": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "upPrice": [],
+      "downPrice": [],
+      "reserveActivationPrice": [
+        { "scenario": "s1", "constant": 0 },
+        { "scenario": "s2", "constant": 0 },
+        { "scenario": "s3", "constant": 0 }
+      ]
+    },
+    {
+      "name": "fcr_up",
+      "mType": "RESERVE",
+      "node": "elc_res",
+      "processGroup": "p1",
+      "direction": "RES_UP",
+      "reserveType": "slow",
+      "isBid": true,
+      "isLimited": false,
+      "minBid": 0,
+      "maxBid": 0,
+      "fee": 0,
+      "realisation": [],
+      "price": [
+        {
+          "scenario": "s1",
+          "series": [
+            4,
+            56,
+            44,
+            86,
+            10,
+            5,
+            12,
+            50,
+            99,
+            78,
+            25,
+            66,
+            15,
+            79,
+            60,
+            70,
+            21,
+            78,
+            79,
+            28,
+            9,
+            32,
+            40,
+            53
+          ]
+        },
+        {
+          "scenario": "s2",
+          "series": [
+            4.8,
+            67.2,
+            52.8,
+            103.2,
+            12,
+            6,
+            14.399999999999999,
+            60,
+            118.8,
+            93.6,
+            30,
+            79.2,
+            18,
+            94.8,
+            72,
+            84,
+            25.2,
+            93.6,
+            94.8,
+            33.6,
+            10.799999999999999,
+            38.4,
+            48,
+            63.599999999999994
+          ]
+        },
+        {
+          "scenario": "s3",
+          "series": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "upPrice": [],
+      "downPrice": [],
+      "reserveActivationPrice": [
+        { "scenario": "s1", "constant": 0 },
+        { "scenario": "s2", "constant": 0 },
+        { "scenario": "s3", "constant": 0 }
+      ]
+    },
+    {
+      "name": "fcr_dn",
+      "mType": "RESERVE",
+      "node": "elc_res",
+      "processGroup": "p1",
+      "direction": "RES_DOWN",
+      "reserveType": "slow",
+      "isBid": true,
+      "isLimited": true,
+      "minBid": 0.5,
+      "maxBid": 5,
+      "fee": 50,
+      "realisation": [],
+      "price": [
+        {
+          "scenario": "s1",
+          "series": [
+            12,
+            71,
+            42,
+            39,
+            78,
+            100,
+            7,
+            49,
+            94,
+            88,
+            24,
+            75,
+            40,
+            95,
+            71,
+            19,
+            79,
+            38,
+            39,
+            1,
+            23,
+            47,
+            24,
+            96
+          ]
+        },
+        {
+          "scenario": "s2",
+          "series": [
+            14.399999999999999,
+            85.2,
+            50.4,
+            46.8,
+            93.6,
+            120,
+            8.4,
+            58.8,
+            112.8,
+            105.6,
+            28.799999999999997,
+            90,
+            48,
+            114,
+            85.2,
+            22.8,
+            94.8,
+            45.6,
+            46.8,
+            1.2,
+            27.599999999999998,
+            56.4,
+            28.799999999999997,
+            115.19999999999999
+          ]
+        },
+        {
+          "scenario": "s3",
+          "series": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "upPrice": [],
+      "downPrice": [],
+      "reserveActivationPrice": [
+        { "scenario": "s1", "constant": 0 },
+        { "scenario": "s2", "constant": 0 },
+        { "scenario": "s3", "constant": 0 }
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "name": "s1",
+      "weight": 0.3
+    },
+    {
+      "name": "s2",
+      "weight": 0.5
+    },
+    {
+      "name": "s3",
+      "weight": 0.2
+    }
+  ],
+  "node_diffusions": [],
+  "node_delays": [],
+  "node_histories": []
 }
