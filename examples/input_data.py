@@ -359,3 +359,64 @@ for raw in inflow_blocks:
         create_inflow_block_mutation, variable_values={"ib": ib}
     )
     print(f"CreateInflowBlock result for {ib.get('name')}:", add_inflowblock_result)
+
+# ---------- TOPOLOGIES ----------
+create_topology_mutation = gql("""
+mutation CreateTopology(
+  $processName: String!,
+  $sourceNodeName: String,
+  $sinkNodeName: String,
+  $topology: NewTopology!
+) {
+  createTopology(
+    processName: $processName,
+    sourceNodeName: $sourceNodeName,
+    sinkNodeName: $sinkNodeName,
+    topology: $topology
+  ) {
+    errors { field message }
+  }
+}
+""")
+
+TOPOLOGY_KEYS = {
+    "capacity","vomCost","rampUp","rampDown","initialLoad","initialFlow","capTs"
+}
+
+topologies = data.get("topologies", [])
+for raw in topologies:
+    process_name = raw["processName"]
+    src = raw.get("sourceNodeName")   # may be None
+    sink = raw.get("sinkNodeName")    # may be None
+
+    topo = pick_keys(raw, TOPOLOGY_KEYS)
+    topo.setdefault("capTs", [])
+
+    # Ensure capTs is a list of ValueInput objects.
+    # Keep only allowed keys and drop Nones; series -> floats.
+    cleaned_capts = []
+    for v in topo["capTs"]:
+        vi = {}
+        if "scenario" in v and v["scenario"] is not None:
+            vi["scenario"] = v["scenario"]
+        if "series" in v and v["series"] is not None:
+            vi["series"] = [float(x) for x in v["series"]]
+        # optional: include constant only if explicitly provided (non-None)
+        if "constant" in v and v["constant"] is not None:
+            vi["constant"] = float(v["constant"])
+        cleaned_capts.append(vi)
+
+    topo["capTs"] = cleaned_capts
+    topo = prune_nones(topo)
+
+    res = client.execute(
+        create_topology_mutation,
+        variable_values={
+            "processName": process_name,
+            "sourceNodeName": src,
+            "sinkNodeName": sink,
+            "topology": topo
+        }
+    )
+    print(f"CreateTopology result for process {process_name} (source={src}, sink={sink}):", res)
+

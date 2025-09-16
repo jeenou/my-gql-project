@@ -642,6 +642,38 @@
       "weight": 0.2
     }
   ],
+  "topologies": [
+    { "processName": "ngchp", "sourceNodeName": "ng",  "sinkNodeName": null,  "capacity": 20, "vomCost": 3,   "rampUp": 0.5, "rampDown": 0.5, "initialLoad": 0.6, "initialFlow": 0.6, "capTs": [] },
+    { "processName": "ngchp", "sourceNodeName": null,  "sinkNodeName": "dh",  "capacity": 10, "vomCost": 0,   "rampUp": 0.5, "rampDown": 0.5, "initialLoad": 0.6, "initialFlow": 0.6, "capTs": [] },
+    { "processName": "ngchp", "sourceNodeName": null,  "sinkNodeName": "elc", "capacity": 8,  "vomCost": 0,   "rampUp": 0.5, "rampDown": 0.5, "initialLoad": 0.6, "initialFlow": 0.6, "capTs": [] },
+
+    {
+      "processName": "hp1",
+      "sourceNodeName": "elc",
+      "sinkNodeName": null,
+      "capacity": 5,
+      "vomCost": 15,
+      "rampUp": 0.5,
+      "rampDown": 0.5,
+      "initialLoad": 0.6,
+      "initialFlow": 0.6,
+      "capTs": [
+        { "scenario": "s1", "series": [5, 4.28571428571, 4.28571428571, 4.41176470588, 4.54545454545, 4.6875, 4.83870967742, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 3.75, 3.75, 3.75, 3.75, 4.28571428571, 4.28571428571, 4.28571428571] },
+        { "scenario": "s2", "series": [5, 4.28571428571, 4.28571428571, 4.41176470588, 4.54545454545, 4.6875, 4.83870967742, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 3.75, 3.75, 3.75, 3.75, 4.28571428571, 4.28571428571, 4.28571428571] },
+        { "scenario": "s3", "series": [5, 4.28571428571, 4.28571428571, 4.41176470588, 4.54545454545, 4.6875, 4.83870967742, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 3.75, 3.75, 3.75, 3.75, 4.28571428571, 4.28571428571, 4.28571428571] }
+      ]
+    },
+    { "processName": "hp1",   "sourceNodeName": null,  "sinkNodeName": "dh",  "capacity": 15, "vomCost": 0.5, "rampUp": 0.5, "rampDown": 0.5, "initialLoad": 0.6, "initialFlow": 0.6, "capTs": [] },
+
+    { "processName": "p2x1",  "sourceNodeName": "elc", "sinkNodeName": null,  "capacity": 10, "vomCost": 15,  "rampUp": 1.0, "rampDown": 1.0, "initialLoad": 1.0, "initialFlow": 0.6, "capTs": [] },
+    { "processName": "p2x1",  "sourceNodeName": null,  "sinkNodeName": "h2",  "capacity": 7,  "vomCost": 1,   "rampUp": 1.0, "rampDown": 1.0, "initialLoad": 1.0, "initialFlow": 0.6, "capTs": [] },
+
+    { "processName": "pv1",   "sourceNodeName": null,  "sinkNodeName": "elc", "capacity": 5,  "vomCost": 0.5, "rampUp": 1.0, "rampDown": 1.0, "initialLoad": 1.0, "initialFlow": 0.6, "capTs": [] },
+    { "processName": "pv2",   "sourceNodeName": null,  "sinkNodeName": "elc", "capacity": 5,  "vomCost": 0.5, "rampUp": 1.0, "rampDown": 1.0, "initialLoad": 1.0, "initialFlow": 0.6, "capTs": [] },
+
+    { "processName": "dh_tra","sourceNodeName": "dh",  "sinkNodeName": null,  "capacity": 20, "vomCost": 0,   "rampUp": 1.0, "rampDown": 1.0, "initialLoad": 0.6, "initialFlow": 0.6, "capTs": [] },
+    { "processName": "dh_tra","sourceNodeName": null,  "sinkNodeName": "dh2","capacity": 20, "vomCost": 0,   "rampUp": 1.0, "rampDown": 1.0, "initialLoad": 0.6, "initialFlow": 0.6, "capTs": [] }
+  ],
   "node_diffusions": [],
   "node_delays": [],
   "node_histories": []
