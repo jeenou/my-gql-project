@@ -203,7 +203,7 @@ mutation CreateRisk($risk: NewRisk!) {
 
 RISK_KEYS = {"parameter","value"}
 
-risks = data.get("risks", [])
+risks = data.get("risk", [])
 for raw in risks:
     risk = prune_nones(pick_keys(raw, RISK_KEYS))
     add_risk_result = client.execute(create_risk_mutation, variable_values={"risk": risk})

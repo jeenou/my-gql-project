@@ -750,6 +750,10 @@
     { "name": "fast", "rampRate": 4 },
     { "name": "slow", "rampRate": 1 }
   ],
+  "risk": [
+    { "parameter": "alfa", "value": 0.1 },
+    { "parameter": "beta",  "value": 0.2 }
+  ],
   "node_diffusions": [],
   "node_delays": [],
   "node_histories": []
