@@ -1,5 +1,19 @@
 from typing import Any, Dict, Iterable, List
 
+def normalize_value_inputs(arr):
+    """Keep only ValueInput keys; cast numbers to floats; omit None."""
+    norm = []
+    for v in arr or []:
+        vi = {}
+        if v.get("scenario") is not None:
+            vi["scenario"] = v["scenario"]
+        if v.get("series") is not None:
+            vi["series"] = [float(x) for x in v["series"]]
+        if v.get("constant") is not None:
+            vi["constant"] = float(v["constant"])
+        norm.append(vi)
+    return norm
+
 def prune_nones(x):
     if isinstance(x, dict):
         return {k: prune_nones(v) for k, v in x.items() if v is not None}

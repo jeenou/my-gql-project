@@ -1,4 +1,15 @@
 {
+  "setup": {
+    "useMarketBids": true,
+    "useReserves": true,
+    "useReserveRealisation": true,
+    "useNodeDummyVariables": true,
+    "useRampDummyVariables": true,
+    "commonTimesteps": 0,
+    "commonScenarioName": "",
+    "nodeDummyVariableCost": 10000.0,
+    "rampDummyVariableCost": 10000.0
+  },
   "nodes": [
     {
       "name": "ng",
@@ -673,6 +684,39 @@
 
     { "processName": "dh_tra","sourceNodeName": "dh",  "sinkNodeName": null,  "capacity": 20, "vomCost": 0,   "rampUp": 1.0, "rampDown": 1.0, "initialLoad": 0.6, "initialFlow": 0.6, "capTs": [] },
     { "processName": "dh_tra","sourceNodeName": null,  "sinkNodeName": "dh2","capacity": 20, "vomCost": 0,   "rampUp": 1.0, "rampDown": 1.0, "initialLoad": 0.6, "initialFlow": 0.6, "capTs": [] }
+  ],
+  "gen_constraints": [
+    {
+      "name": "c1",
+      "gcType": "EQUAL",
+      "isSetpoint": false,
+      "penalty": 0,
+      "constant": [
+        { "scenario": "s1", "series": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+        { "scenario": "s2", "series": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+        { "scenario": "s3", "series": [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] }
+      ],
+      "flow_factors": [
+        {
+          "processName": "ngchp",
+          "sourceOrSinkNodeName": "elc",
+          "factor": [
+            { "scenario": "s1", "series": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] },
+            { "scenario": "s2", "series": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] },
+            { "scenario": "s3", "series": [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] }
+          ]
+        },
+        {
+          "processName": "ngchp",
+          "sourceOrSinkNodeName": "dh",
+          "factor": [
+            { "scenario": "s1", "series": [-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8] },
+            { "scenario": "s2", "series": [-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8] },
+            { "scenario": "s3", "series": [-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8,-0.8] }
+          ]
+        }
+      ]
+    }
   ],
   "node_diffusions": [],
   "node_delays": [],

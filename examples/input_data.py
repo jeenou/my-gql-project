@@ -1,7 +1,7 @@
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 import json
-from utilities import prune_nones, pick_keys, normalize_point, normalize_points
+from utilities import prune_nones, pick_keys, normalize_point, normalize_points, normalize_value_inputs
 
 transport = RequestsHTTPTransport(
     url="http://localhost:3030/graphql",
@@ -14,54 +14,20 @@ client = Client(transport=transport, fetch_schema_from_transport=True)
 with open('model_data.json', 'r') as f:
     data = json.load(f)
 
-# Example mutation to create input data setup
+# ---------- CREATE SETUP ----------
 
-mutation = gql("""
-mutation CreateInputDataSetup {
-    createInputDataSetup(setupUpdate: {
-        useMarketBids: true,
-        useReserves: false,
-        useReserveRealisation: false,
-        useNodeDummyVariables: false,
-        useRampDummyVariables: false,
-        commonTimesteps: 0,
-        commonScenarioName: "default",
-        nodeDummyVariableCost: 0.0,
-        rampDummyVariableCost: 0.0
-    }) {
-        errors {
-            field
-            message
-        }
-    }
+create_setup_mut = gql("""
+mutation($s: InputDataSetupInput!) {
+  createInputDataSetup(setupUpdate: $s) {
+    errors { field message }
+  }
 }
 """)
 
-result = client.execute(mutation)
-print("CreateInputDataSetup result:", result)
+setup_input = prune_nones(data.get("setup", {}))
+res = client.execute(create_setup_mut, variable_values={"s": setup_input})
+print("CreateInputDataSetup result:", res)
 
-# Query the model after creating input data setup
-model_query = gql("""
-query {
-    model {
-        inputData {
-            setup {
-                reserveRealisation
-                useMarketBids
-                useReserves
-                commonTimeSteps
-                useNodeDummyVariables
-                useRampDummyVariables
-                nodeDummyVariableCost
-                rampDummyVariableCost
-            }
-        }
-    }
-}
-""")
-
-model_result = client.execute(model_query)
-print("Model data:", model_result)
 
 # ---------- NODES ----------
 create_node_mutation = gql("""
@@ -305,25 +271,6 @@ for raw in node_histories:
         res2 = client.execute(add_history_step_mutation, variable_values={"nodeName": node_name, "step": step_clean})
         print(f"AddStepToNodeHistory result for {node_name}:", res2)
 
-# ---------- GENERIC CONSTRAINT ----------
-create_gen_constraint_mutation = gql("""
-mutation CreateGenConstraint($constraint: NewGenConstraint!) {
-  createGenConstraint(constraint: $constraint) { errors { field message } }
-}
-""")
-
-GEN_CONSTRAINT_KEYS = {"name","gcType","isSetpoint","penalty","constant"}
-
-gen_constraints = data.get("gen_constraints", [])
-for raw in gen_constraints:
-    gc = pick_keys(raw, GEN_CONSTRAINT_KEYS)
-    gc.setdefault("constant", [])
-    gc = prune_nones(gc)
-    add_genconstraint_result = client.execute(
-        create_gen_constraint_mutation, variable_values={"constraint": gc}
-    )
-    print(f"CreateGenConstraint result for {gc.get('name')}:", add_genconstraint_result)
-
 # ---------- RESERVE TYPE ----------
 create_reserve_type_mutation = gql("""
 mutation CreateReserveType($rt: NewReserveType!) {
@@ -419,4 +366,108 @@ for raw in topologies:
         }
     )
     print(f"CreateTopology result for process {process_name} (source={src}, sink={sink}):", res)
+
+    # ---------- GENERIC CONSTRAINT ----------
+create_gen_constraint_mutation = gql("""
+mutation CreateGenConstraint($constraint: NewGenConstraint!) {
+  createGenConstraint(constraint: $constraint) { errors { field message } }
+}
+""")
+
+create_flow_confactor_mutation = gql("""
+mutation CreateFlowConFactor(
+  $constraintName: String!,
+  $processName: String!,
+  $sourceOrSinkNodeName: String!,
+  $factor: [ValueInput!]!
+) {
+  createFlowConFactor(
+    constraintName: $constraintName,
+    processName: $processName,
+    sourceOrSinkNodeName: $sourceOrSinkNodeName,
+    factor: $factor
+  ) { errors { field message } }
+}
+""")
+
+create_state_confactor_mutation = gql("""
+mutation CreateStateConFactor(
+  $constraintName: String!,
+  $nodeName: String!,
+  $factor: [ValueInput!]!
+) {
+  createStateConFactor(
+    constraintName: $constraintName,
+    nodeName: $nodeName,
+    factor: $factor
+  ) { errors { field message } }
+}
+""")
+
+create_online_confactor_mutation = gql("""
+mutation CreateOnlineConFactor(
+  $constraintName: String!,
+  $processName: String!,
+  $factor: [ValueInput!]!
+) {
+  createOnlineConFactor(
+    constraintName: $constraintName,
+    processName: $processName,
+    factor: $factor
+  ) { errors { field message } }
+}
+""")
+
+GEN_CONSTRAINT_KEYS = {"name","gcType","isSetpoint","penalty","constant"}
+
+gen_constraints = data.get("gen_constraints", [])
+for raw in gen_constraints:
+    # 1) create the base constraint
+    gc = pick_keys(raw, GEN_CONSTRAINT_KEYS)
+    gc.setdefault("constant", [])
+    gc["constant"] = normalize_value_inputs(gc["constant"])
+    gc = prune_nones(gc)
+
+    add_gc_res = client.execute(
+        create_gen_constraint_mutation,
+        variable_values={"constraint": gc}
+    )
+    print(f"CreateGenConstraint result for {raw.get('name')}:", add_gc_res)
+
+    cname = raw["name"]
+
+    # 2) add FLOW factors (if any)
+    for ff in raw.get("flow_factors", []):
+        factor = normalize_value_inputs(ff.get("factor", []))
+        vars_ = {
+            "constraintName": cname,
+            "processName": ff["processName"],
+            "sourceOrSinkNodeName": ff["sourceOrSinkNodeName"],
+            "factor": factor
+        }
+        res = client.execute(create_flow_confactor_mutation, variable_values=vars_)
+        print(f"createFlowConFactor {cname} {ff['processName']}->{ff['sourceOrSinkNodeName']}:", res)
+
+    # 3) add STATE factors (if any)
+    for sf in raw.get("state_factors", []):
+        factor = normalize_value_inputs(sf.get("factor", []))
+        vars_ = {
+            "constraintName": cname,
+            "nodeName": sf["nodeName"],
+            "factor": factor
+        }
+        res = client.execute(create_state_confactor_mutation, variable_values=vars_)
+        print(f"createStateConFactor {cname} node={sf['nodeName']}:", res)
+
+    # 4) add ONLINE factors (if any)
+    for of in raw.get("online_factors", []):
+        factor = normalize_value_inputs(of.get("factor", []))
+        vars_ = {
+            "constraintName": cname,
+            "processName": of["processName"],
+            "factor": factor
+        }
+        res = client.execute(create_online_confactor_mutation, variable_values=vars_)
+        print(f"createOnlineConFactor {cname} process={of['processName']}:", res)
+
 
