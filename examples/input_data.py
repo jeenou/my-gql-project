@@ -1,7 +1,7 @@
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 import json
-from utilities import prune_nones, pick_keys, normalize_point, normalize_points, normalize_value_inputs
+from utilities import prune_nones, pick_keys, normalize_points, normalize_value_inputs
 
 transport = RequestsHTTPTransport(
     url="http://localhost:3030/graphql",
@@ -13,6 +13,46 @@ client = Client(transport=transport, fetch_schema_from_transport=True)
 
 with open('model_data.json', 'r') as f:
     data = json.load(f)
+
+# ---------- SETTINGS ----------
+update_settings_mut = gql("""
+mutation UpdateSettings($settings: SettingsInput!) {
+  updateSettings(settingsInput: $settings) {
+    __typename
+    ... on Settings {
+      priceFetcherScript
+      entsoeApiToken
+      location { country place }
+    }
+    ... on ValidationErrors {
+      errors { field message }
+    }
+  }
+}
+""")
+
+settings_input = prune_nones(data.get("settings", {}))
+if settings_input:
+    res = client.execute(update_settings_mut, variable_values={"settings": settings_input})
+    print("UpdateSettings result:", res)
+else:
+    print("No 'settings' block found in data; skipping updateSettings.")
+
+# ---------- TIME LINE ----------
+update_timeline_mut = gql("""
+mutation UpdateTimeLine($tl: TimeLineUpdate!) {
+  updateTimeLine(timeLineInput: $tl) {
+    errors { field message }
+  }
+}
+""")
+
+timeline_input = prune_nones(data.get("timeline", {}))
+if timeline_input:
+    res = client.execute(update_timeline_mut, variable_values={"tl": timeline_input})
+    print("UpdateTimeLine result:", res)
+else:
+    print("No 'timeline' block found in data; skipping updateTimeLine.")
 
 # ---------- CREATE SETUP ----------
 
@@ -43,7 +83,6 @@ NODE_KEYS = {"name","isCommodity","isMarket","isRes","cost","inflow"}
 nodes = data.get('nodes', [])
 for raw in nodes:
     node_input = pick_keys(raw, NODE_KEYS)
-    # schema requires cost: [ValueInput!]! and inflow: [ForecastValueInput!]!
     node_input.setdefault("cost", [])
     node_input.setdefault("inflow", [])
     node_input = prune_nones(node_input)
@@ -64,7 +103,6 @@ for entry in node_states:
     node_name = entry["nodeName"]
     state = entry["state"]
 
-    # GraphQL NewState has no nullables -> ensure all fields are present
     required_fields = [
         "inMax","outMax","stateLossProportional","stateMin","stateMax",
         "initialState","isScenarioIndependent","isTemp","tEConversion","residualValue"
@@ -89,7 +127,6 @@ mutation CreateProcess($process: NewProcess!) {
 }
 """)
 
-# Match NewProcess fields in the schema
 PROCESS_KEYS = {
     "name","conversion","isCfFix","isOnline","isRes","eff",
     "loadMin","loadMax","startCost","minOnline","maxOnline",
@@ -97,7 +134,6 @@ PROCESS_KEYS = {
     "cf","effTs","effOpsFun"
 }
 
-# Required *scalar/boolean/enum* fields that must be present (non-null in schema)
 REQUIRED_PROCESS_FIELDS = {
     "name","conversion","isCfFix","isOnline","isRes","eff",
     "loadMin","loadMax","startCost","minOnline","maxOnline",
@@ -106,22 +142,19 @@ REQUIRED_PROCESS_FIELDS = {
 
 processes = data.get('processes', [])
 for raw in processes:
-    # Validate: fail fast if any required scalar is missing
+
     missing = [k for k in REQUIRED_PROCESS_FIELDS if raw.get(k) is None]
     if missing:
         raise ValueError(f"Process {raw.get('name')!r}: missing required fields: {', '.join(missing)}")
 
     proc_input = pick_keys(raw, PROCESS_KEYS)
 
-    # Non-null list fields -> default to [] if not provided
     proc_input.setdefault("cf", [])
     proc_input.setdefault("effTs", [])
     proc_input.setdefault("effOpsFun", [])
 
-    # Normalize points (no-op if already {'x': float, 'y': float})
     proc_input["effOpsFun"] = normalize_points(proc_input["effOpsFun"])
 
-    # Drop any explicit Nones
     proc_input = prune_nones(proc_input)
 
     add_process_result = client.execute(
@@ -183,13 +216,13 @@ MARKET_KEYS = {
 markets = data.get("markets", [])
 for raw in markets:
     mkt = pick_keys(raw, MARKET_KEYS)
-    # ensure required lists exist
+
     mkt.setdefault("realisation", [])
     mkt.setdefault("price", [])
     mkt.setdefault("upPrice", [])
     mkt.setdefault("downPrice", [])
     mkt.setdefault("reserveActivationPrice", [])
-    # enums as strings in variables are fine: "ENERGY", "RESERVE", "UP", "RES_UP", ...
+
     mkt = prune_nones(mkt)
     add_market_result = client.execute(create_market_mutation, variable_values={"market": mkt})
     print(f"CreateMarket result for {raw.get('name')}:", add_market_result)
@@ -245,7 +278,7 @@ for raw in node_delays:
     )
     print(f"CreateNodeDelay result {dly.get('fromNode')} -> {dly.get('toNode')}:", add_nodedelay_result)
 
-# ---------- NODE HISTORY (optional steps) ----------
+# ---------- NODE HISTORY ----------
 create_node_history_mutation = gql("""
 mutation CreateNodeHistory($nodeName: String!) {
   createNodeHistory(nodeName: $nodeName) { errors { field message } }
@@ -258,8 +291,6 @@ mutation AddStep($nodeName: String!, $step: NewSeries!) {
 }
 """)
 
-# Expect entries like:
-# { "nodeName": "ExampleNode", "steps": [ { "scenario":"s1", "durations":[{"hours":1,"minutes":0,"seconds":0}], "values":[1.0] } ] }
 node_histories = data.get("node_histories", [])
 for raw in node_histories:
     node_name = raw["nodeName"]
@@ -333,14 +364,12 @@ TOPOLOGY_KEYS = {
 topologies = data.get("topologies", [])
 for raw in topologies:
     process_name = raw["processName"]
-    src = raw.get("sourceNodeName")   # may be None
-    sink = raw.get("sinkNodeName")    # may be None
+    src = raw.get("sourceNodeName")   
+    sink = raw.get("sinkNodeName")   
 
     topo = pick_keys(raw, TOPOLOGY_KEYS)
     topo.setdefault("capTs", [])
 
-    # Ensure capTs is a list of ValueInput objects.
-    # Keep only allowed keys and drop Nones; series -> floats.
     cleaned_capts = []
     for v in topo["capTs"]:
         vi = {}
