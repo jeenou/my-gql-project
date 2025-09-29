@@ -187,6 +187,47 @@ for pg in process_groups:
     result = client.execute(create_process_group_mutation, variable_values={"name": pg["name"]})
     print(f"CreateProcessGroup result for {pg.get('name')}:", result)
 
+# ---------- ADD MEMBERS TO NODE GROUPS ----------
+add_node_to_group_mutation = gql("""
+mutation AddNodeToGroup($nodeName: String!, $groupName: String!) {
+  addNodeToGroup(nodeName: $nodeName, groupName: $groupName) { message }
+}
+""")
+
+# Use the already-read 'node_groups' from data (created above)
+for ng in node_groups:
+    members = ng.get("nodes", []) or []
+    if not members:
+        continue
+    gname = ng["name"]
+    for node_name in members:
+        res = client.execute(
+            add_node_to_group_mutation,
+            variable_values={"nodeName": node_name, "groupName": gname}
+        )
+        print(f"addNodeToGroup result: node={node_name} -> group={gname}: {res}")
+
+# ---------- ADD MEMBERS TO PROCESS GROUPS ----------
+add_process_to_group_mutation = gql("""
+mutation AddProcessToGroup($processName: String!, $groupName: String!) {
+  addProcessToGroup(processName: $processName, groupName: $groupName) { message }
+}
+""")
+
+# Use the already-read 'process_groups' from data (created above)
+for pg in process_groups:
+    members = pg.get("processes", []) or []
+    if not members:
+        continue
+    gname = pg["name"]
+    for proc_name in members:
+        res = client.execute(
+            add_process_to_group_mutation,
+            variable_values={"processName": proc_name, "groupName": gname}
+        )
+        print(f"addProcessToGroup result: process={proc_name} -> group={gname}: {res}")
+
+
 # ---------- SCENARIOS ----------
 create_scenario_mutation = gql("""
 mutation CreateScenario($name: String!, $weight: Float!) {
@@ -498,5 +539,59 @@ for raw in gen_constraints:
         }
         res = client.execute(create_online_confactor_mutation, variable_values=vars_)
         print(f"createOnlineConFactor {cname} process={of['processName']}:", res)
+
+# ---------- START OPTIMIZATION ----------
+start_opt_mutation = gql("""
+mutation {
+  startOptimization
+}
+""")
+
+res = client.execute(start_opt_mutation)
+job_id = res["startOptimization"]
+print(f"Optimization job started. id={job_id}")
+
+# ---- (optional) poll job status and fetch outcome ----
+job_status_q = gql("""
+query JobStatus($id: Int!) {
+  jobStatus(jobId: $id) { state message }
+}
+""")
+
+job_outcome_q = gql("""
+query JobOutcome($id: Int!) {
+  jobOutcome(jobId: $id) {
+    __typename
+    ... on OptimizationOutcome {
+      time
+      controlSignals { name signal }
+    }
+    ... on ElectricityPriceOutcome { time price }
+    ... on WeatherForecastOutcome { time temperature }
+  }
+}
+""")
+
+import time
+
+state = None
+for _ in range(300):  # ~5 min @ 1s interval; adjust if needed
+    js = client.execute(job_status_q, variable_values={"id": job_id})["jobStatus"]
+    state = js["state"]
+    print(f"Job {job_id} -> {state}" + (f" | {js.get('message')}" if js.get("message") else ""))
+    if state in ("FAILED", "FINISHED"):
+        break
+    time.sleep(1)
+
+if state == "FINISHED":
+    out = client.execute(job_outcome_q, variable_values={"id": job_id})["jobOutcome"]
+    print("Outcome type:", out["__typename"])
+    if out["__typename"] == "OptimizationOutcome":
+        # small preview
+        for cs in out["controlSignals"]:
+            print(f"{cs['name']}: {cs['signal'][:10]} ... (len={len(cs['signal'])})")
+else:
+    print(f"Job {job_id} ended with state={state}")
+
 
 

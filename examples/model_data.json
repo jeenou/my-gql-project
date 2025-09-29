@@ -3,7 +3,7 @@
     "location": { "country": "Finland", "place": "Helsinki" }
   },
   "timeline": {
-    "duration": { "hours": 24, "minutes": 0, "seconds": 0 },
+    "duration": { "hours": 23, "minutes": 0, "seconds": 0 },
     "step":     { "hours": 1,  "minutes": 0, "seconds": 0 },
     "start":    { "customStartTime": "2025-09-23T16:00:00Z" }
   },
