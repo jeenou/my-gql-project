@@ -541,17 +541,13 @@ for raw in gen_constraints:
         print(f"createOnlineConFactor {cname} process={of['processName']}:", res)
 
 # ---------- START OPTIMIZATION ----------
-start_opt_mutation = gql("""
-mutation {
-  startOptimization
-}
-""")
+start_opt_mutation = gql("""mutation { startOptimization }""")
 
 res = client.execute(start_opt_mutation)
 job_id = res["startOptimization"]
 print(f"Optimization job started. id={job_id}")
 
-# ---- (optional) poll job status and fetch outcome ----
+# ---- poll job status and fetch outcome ----
 job_status_q = gql("""
 query JobStatus($id: Int!) {
   jobStatus(jobId: $id) { state message }
@@ -573,25 +569,43 @@ query JobOutcome($id: Int!) {
 """)
 
 import time
+import os
 
 state = None
+last_status = None
+
 for _ in range(300):  # ~5 min @ 1s interval; adjust if needed
-    js = client.execute(job_status_q, variable_values={"id": job_id})["jobStatus"]
-    state = js["state"]
-    print(f"Job {job_id} -> {state}" + (f" | {js.get('message')}" if js.get("message") else ""))
+    last_status = client.execute(job_status_q, variable_values={"id": job_id})["jobStatus"]
+    state = last_status["state"]
+    print(f"Job {job_id} -> {state}" + (f" | {last_status.get('message')}" if last_status.get("message") else ""))
     if state in ("FAILED", "FINISHED"):
         break
     time.sleep(1)
 
+# Always write a file so there's a record no matter what happened
+out_path = f"optimization_outcome_{job_id}.json"
+
 if state == "FINISHED":
     out = client.execute(job_outcome_q, variable_values={"id": job_id})["jobOutcome"]
+    payload = {
+        "jobId": job_id,
+        "state": state,
+        "outcome": out
+    }
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+    print(f"Wrote full optimization outcome to {out_path}")
     print("Outcome type:", out["__typename"])
     if out["__typename"] == "OptimizationOutcome":
-        # small preview
-        for cs in out["controlSignals"]:
+        # small console preview
+        for cs in out.get("controlSignals", []):
             print(f"{cs['name']}: {cs['signal'][:10]} ... (len={len(cs['signal'])})")
 else:
-    print(f"Job {job_id} ended with state={state}")
-
-
-
+    payload = {
+        "jobId": job_id,
+        "state": state,
+        "message": last_status.get("message")
+    }
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+    print(f"Job {job_id} ended with state={state}. Details written to {out_path}")

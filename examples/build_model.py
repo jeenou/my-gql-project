@@ -49,6 +49,24 @@ mutation CreateInputDataSetup {
 result = client.execute(mutation)
 print("CreateInputDataSetup result:", result)
 
+# Example mutation to create a reserve type
+add_reservetype_mutation = gql("""
+mutation CreateReserveType {
+    createReserveType(reserveType: {
+        name: "ExampleReserveType",
+        rampRate: 1.5
+    }) {
+        errors {
+            field
+            message
+        }
+    }
+}
+""")
+
+add_reservetype_result = client.execute(add_reservetype_mutation)
+print("CreateReserveType result:", add_reservetype_result)
+
 # Query the model after creating input data setup
 model_query = gql("""
 query {
@@ -136,6 +154,7 @@ mutation CreateProcess {
         isScenarioIndependent: true,
         cf: [],
         effTs: []
+        effOpsFun: []
     }) {
         errors {
             field
@@ -162,7 +181,7 @@ print("CreateNodeGroup result:", add_node_group_result)
 # Example mutation to add a scenario
 add_scenario_mutation = gql("""
 mutation CreateScenario {
-    createScenario(name: "ExampleScenario", weight: 1.0) {
+    createScenario(name: "s1", weight: 1.0) {
         message
     }
 }
@@ -191,7 +210,7 @@ mutation CreateMarket {
         processGroup: "ExampleProcessGroup",
         direction: UP,
         realisation: [],
-        reserveType: "ReserveType",
+        reserveType: "ExampleReserveType",
         isBid: true,
         isLimited: false,
         minBid: 0.0,
@@ -199,15 +218,15 @@ mutation CreateMarket {
         fee: 0.0,
         price: [
         {
-        scenario: "ExampleScenario",
+        scenario: "s1",
         constant: 50.0
         }],
         upPrice: [{
-        scenario: "ExampleScenario",
+        scenario: "s1",
         constant: 51.0
         }],
         downPrice: [{
-        scenario: "ExampleScenario",
+        scenario: "s1",
         constant: 49.0
         }],
         reserveActivationPrice: []
@@ -247,7 +266,7 @@ mutation CreateNodeDiffusion {
         fromNode: "ExampleNode",
         toNode: "ExampleNode2",
         coefficient: [
-            { scenario: "ExampleScenario", constant: 0.5 }
+            { scenario: "s1", constant: 0.5 }
         ]
     }) {
         errors {
@@ -303,7 +322,7 @@ mutation CreateGenConstraint {
         isSetpoint: false,
         penalty: 100.0,
         constant: [
-            { scenario: "ExampleScenario", constant: 50.0 }
+            { scenario: "s1", constant: 50.0 }
         ]
     }) {
         errors {
@@ -317,24 +336,6 @@ mutation CreateGenConstraint {
 add_genconstraint_result = client.execute(add_genconstraint_mutation)
 print("CreateGenConstraint result:", add_genconstraint_result)
 
-# Example mutation to create a reserve type
-add_reservetype_mutation = gql("""
-mutation CreateReserveType {
-    createReserveType(reserveType: {
-        name: "ExampleReserveType",
-        rampRate: 1.5
-    }) {
-        errors {
-            field
-            message
-        }
-    }
-}
-""")
-
-add_reservetype_result = client.execute(add_reservetype_mutation)
-print("CreateReserveType result:", add_reservetype_result)
-
 # Example mutation to create an inflow block
 add_inflowblock_mutation = gql("""
 mutation CreateInflowBlock {
@@ -342,7 +343,7 @@ mutation CreateInflowBlock {
         name: "ExampleInflowBlock",
         node: "ExampleNode",
         data: [
-            { scenario: "ExampleScenario", constant: 42.0 }
+            { scenario: "s1", constant: 42.0 }
         ]
     }) {
         errors {

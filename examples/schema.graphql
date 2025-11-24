@@ -1,5 +1,5 @@
 schema {
-  query: Query
+  query: Query      
   mutation: Mutation
 }
 
@@ -152,8 +152,7 @@ input NewProcess {
   "If true, forces the online variable of the process to be equal in all scenarios." isScenarioIndependent: Boolean!
   "Capacity factor time series for processes with cf functionality." cf: [ValueInput!]!
   "Value time series of the efficiency of processes" effTs: [ValueInput!]!
-  "Value time series of the efficiency of processes" effOps: [String!]!
-  "Value time series of the efficiency of processes" effFun: [PointInput!]!
+  "Value time series of the efficiency of processes" effOpsFun: [PointInput!]!
 }
 
 input NewReserveType {
@@ -542,8 +541,7 @@ type Process {
   topos: [Topology!]!
   cf: [Value!]!
   effTs: [Value!]!
-  effOps: [String!]!
-  effFun: [Point!]!
+  effOpsFun: [Point!]!
 }
 
 type ProcessGroup {
